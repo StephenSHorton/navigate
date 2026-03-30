@@ -82,8 +82,6 @@ export class PathManager {
 	private maid = new Maid();
 	private timeSinceUpdate = 0;
 
-	private tickCount = 0;
-
 	// ── Public signals ──────────────────────────────────────────────────
 
 	/** Fires when a managed agent changes pursuit phase. */
@@ -282,10 +280,6 @@ export class PathManager {
 		if (this.timeSinceUpdate < this.config.updateInterval) return;
 		this.timeSinceUpdate = 0;
 
-		this.tickCount++;
-		// Log a status summary every ~1 second (every 10 ticks at 10 Hz)
-		const shouldLog = this.tickCount % 10 === 0;
-
 		const farAgents: ManagedAgent[] = [];
 		let closeCount = 0;
 		let idleCount = 0;
@@ -479,12 +473,6 @@ export class PathManager {
 			agent.lastPosition = agent.getPosition();
 		}
 
-		if (shouldLog && this.agents.size() > 0) {
-			const groupCount = this.groups.size();
-			print(
-				`[PathManager] tick ${this.tickCount} | agents: ${this.agents.size()} | far: ${farAgents.size()} (${leaderCount}L/${followerCount}F) | groups: ${groupCount} (${groupMemberCount} members, ${groupPathfinderCount} pathfinders) | close: ${closeCount} | enqueued: ${enqueueCount}`,
-			);
-		}
 	}
 
 	// ── Phase handlers ──────────────────────────────────────────────────
