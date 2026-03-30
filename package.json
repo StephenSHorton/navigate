@@ -1,0 +1,22 @@
+{
+	"name": "@rbxts/navigate",
+	"version": "0.1.0",
+	"main": "out/init.luau",
+	"types": "out/index.d.ts",
+	"files": ["out"],
+	"scripts": {
+		"build": "rbxtsc",
+		"watch": "rbxtsc -w"
+	},
+	"dependencies": {
+		"@rbxts/maid": "^1.1.0",
+		"@rbxts/services": "^1.6.0",
+		"@rbxts/signal": "^1.1.1"
+	},
+	"devDependencies": {
+		"@rbxts/compiler-types": "^3.0.0-types.0",
+		"@rbxts/types": "^1.0.912",
+		"roblox-ts": "^3.0.0",
+		"typescript": "5.5.3"
+	}
+}
