@@ -249,21 +249,26 @@ Wire that into your own debug HUD however you like.
 
 The manager runs each agent through three pursuit states:
 
-```
-              ┌────────┐  has target & in range & LOS
-   spawn ─→  │  IDLE  │ ────────────────────────────────→ ┌─────────┐
-              └────────┘                                   │  CLOSE  │
-                  ↑↑                                       │ MoveTo  │
-                  ││                                       │ direct  │
-                  ││                                       └─────────┘
-                  ││  out of range or LOS broken         distance > threshold
-                  ││  ←────────────────────────────────  or LOS broken
-                  ││                                          │
-                  ││                                          ↓
-                  ││                                       ┌─────────┐
-                  └┴───────────────────────────────────────│  FAR    │
-                          target lost                      │  paths  │
-                                                           └─────────┘
+```mermaid
+stateDiagram-v2
+    [*] --> IDLE
+    IDLE --> FAR: target set
+    FAR --> CLOSE: in range AND has LOS
+    CLOSE --> FAR: out of range OR LOS broken
+    FAR --> IDLE: target lost
+    CLOSE --> IDLE: target lost
+
+    note right of IDLE
+        no target, no movement
+    end note
+    note right of FAR
+        PathfindingService
+        compute is rate-limited
+    end note
+    note right of CLOSE
+        direct Humanoid:MoveTo
+        cheaper, smoother
+    end note
 ```
 
 - **FAR** = use `PathfindingService` for full nav-mesh paths. Compute is rate-limited.
