@@ -1,10 +1,13 @@
 {
 	"name": "@rbxts/navigate",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Composable TypeScript-native pathfinding suite for roblox-ts. Wraps PathfindingService with multi-agent coordination, formations, and arrival behaviors.",
 	"main": "out/init.luau",
 	"types": "out/index.d.ts",
-	"files": ["out/**/*.luau", "out/**/*.d.ts"],
+	"files": [
+		"out/**/*.luau",
+		"out/**/*.d.ts"
+	],
 	"keywords": [
 		"roblox",
 		"roblox-ts",
