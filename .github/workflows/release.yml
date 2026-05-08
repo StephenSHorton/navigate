@@ -42,6 +42,24 @@ jobs:
           git diff --cached --quiet && echo "Version already up to date" || (git commit -m "chore: update version to ${{ steps.version.outputs.version }}" && git push origin main)
 
       - name: Publish to npm
-        run: npm publish --provenance --access public
+        run: |
+          PKG=$(npm pkg get name | tr -d '"')
+          VER=${{ steps.version.outputs.version }}
+          if npm view "${PKG}@${VER}" version > /dev/null 2>&1; then
+            echo "${PKG}@${VER} already on npm — skipping publish"
+          else
+            npm publish --provenance --access public
+          fi
         env:
           NODE_AUTH_TOKEN: ''
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VER=${{ steps.version.outputs.version }}
+          if gh release view "v$VER" > /dev/null 2>&1; then
+            echo "Release v$VER already exists — skipping"
+          else
+            gh release create "v$VER" --title "v$VER" --generate-notes
+          fi
