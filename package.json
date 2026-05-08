@@ -19,7 +19,7 @@
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/StephenSHorton/navigate"
+		"url": "git+https://github.com/StephenSHorton/navigate.git"
 	},
 	"homepage": "https://github.com/StephenSHorton/navigate#readme",
 	"bugs": {
