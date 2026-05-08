@@ -26,7 +26,6 @@ interface ResolvedConfig {
 	recomputeCooldown: number;
 	clusterRadius: number;
 	clusterDriftThreshold: number;
-	enablePrediction: boolean;
 	updateInterval: number;
 }
 
@@ -38,7 +37,6 @@ function resolveConfig(config?: PathManagerConfig): ResolvedConfig {
 		recomputeCooldown: config?.recomputeCooldown ?? 0.5,
 		clusterRadius: config?.clusterRadius ?? 15,
 		clusterDriftThreshold: config?.clusterDriftThreshold ?? 20,
-		enablePrediction: config?.enablePrediction ?? true,
 		updateInterval: config?.updateInterval ?? 0.1,
 	};
 }
@@ -181,6 +179,54 @@ export class PathManager {
 		return result;
 	}
 
+	/**
+	 * Snapshot of pursuit state across all managed agents. Useful for debug
+	 * HUDs — counts only, no per-agent data. Cheap to call each tick.
+	 */
+	public getStats(): {
+		total: number;
+		far: number;
+		close: number;
+		idle: number;
+		leaders: number;
+		followers: number;
+		clusters: number;
+		groups: number;
+	} {
+		let far = 0;
+		let close = 0;
+		let idle = 0;
+		let leaders = 0;
+		let followers = 0;
+		const clusterIds = new Set<string>();
+
+		for (const [_, agent] of this.agents) {
+			if (agent.pursuitPhase === "far") far++;
+			else if (agent.pursuitPhase === "close") close++;
+			else idle++;
+
+			if (agent.clusterId !== undefined) {
+				clusterIds.add(agent.clusterId);
+				if (agent.isClusterLeader) leaders++;
+				else followers++;
+			} else {
+				// No cluster assignment — treated as its own leader by PathCache.isLeader
+				leaders++;
+			}
+		}
+
+		return {
+			total: this.agents.size(),
+			far,
+			close,
+			idle,
+			leaders,
+			followers,
+			clusters: clusterIds.size(),
+			groups: this.groups.size(),
+		};
+	}
+
 	/** Update configuration at runtime. */
 	public updateConfig(config: Partial<PathManagerConfig>): void {
 		const prev = this.config;
@@ -296,7 +342,12 @@ export class PathManager {
 
 				if (newPhase === "close" && oldPhase === "far") {
 					agent.pathAgent.stop();
+					agent.pathAgent.clearVisualization();
 					agent.setCollisionGroup(PathManager.AGENT_GROUP);
+				}
+
+				if (oldPhase === "close") {
+					agent.pathAgent.hideCloseTarget();
 				}
 			}
 
@@ -418,8 +469,11 @@ export class PathManager {
 		}
 
 		// Phase 3: Auto-cluster ungrouped FAR agents
+		const allAgents: ManagedAgent[] = [];
+		for (const [_, agent] of this.agents) allAgents.push(agent);
 		this.pathCache.updateClusters(
 			farAgents,
+			allAgents,
 			this.config.clusterRadius,
 			this.config.clusterDriftThreshold,
 		);
@@ -466,7 +520,7 @@ export class PathManager {
 		}
 
 		// Phase 5: Process compute budget
-		this.computeBudget.processFrame(this.config.enablePrediction);
+		this.computeBudget.processFrame();
 
 		// Update lastPosition for heading computation
 		for (const [_, agent] of this.agents) {
@@ -480,9 +534,11 @@ export class PathManager {
 	private handleCloseAgent(agent: ManagedAgent): void {
 		if (!agent.target) return;
 
-		const targetPos = this.config.enablePrediction
+		const targetPos = agent.enablePrediction
 			? predictTargetPosition(agent.getPosition(), agent.target, agent.speed)
 			: agent.target.Position;
+
+		let movePos = targetPos;
 
 		// Check if agent is in a group with an arrival behavior
 		if (agent.groupId) {
@@ -494,18 +550,17 @@ export class PathManager {
 				// Use cached approach direction (set once on first CLOSE transition)
 				const approachDir = agentGroup.arrivalApproachDir ?? agent.getPosition().sub(targetPos);
 
-				const arrivalPos = computeArrivalPosition(
+				movePos = computeArrivalPosition(
 					agentGroup.arrivalBehavior,
 					targetPos,
 					agentIndex >= 0 ? agentIndex : 0,
 					members.size(),
 					approachDir,
 				);
-				agent.pathAgent.moveTo(arrivalPos);
-				return;
 			}
 		}
 
-		agent.pathAgent.moveTo(targetPos);
+		agent.pathAgent.moveTo(movePos);
+		agent.pathAgent.showCloseTarget(movePos);
 	}
 }

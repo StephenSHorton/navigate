@@ -84,9 +84,6 @@ export interface PathManagerConfig {
 	/** How far a follower can drift from the leader before splitting off (default: 20). */
 	clusterDriftThreshold?: number;
 
-	/** Enable velocity-based target prediction (default: true). */
-	enablePrediction?: boolean;
-
 	/** Heartbeat update interval in seconds (default: 0.1 = 10 Hz). */
 	updateInterval?: number;
 }
@@ -99,6 +96,11 @@ export interface ManagedAgentConfig extends PathAgentConfig {
 	/** Priority bias — higher values get compute budget sooner.
 	 *  Added to distance-based priority. Default: 0. */
 	priorityBias?: number;
+
+	/** Aim ahead of the target using its AssemblyLinearVelocity (default: false).
+	 *  Useful for fast moving targets at medium range. Can cause overshoot at
+	 *  close range and stale projections at far range, so opt-in per agent. */
+	enablePrediction?: boolean;
 }
 
 // ── Group / Formation types ─────────────────────────────────────────

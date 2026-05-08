@@ -1,4 +1,23 @@
+import { hasLineOfSight } from "../util/lineOfSight";
 import { ManagedAgent } from "./ManagedAgent";
+
+/**
+ * A follower must be able to raycast to its cluster leader. Without LOS
+ * (e.g. they're on different floors), MoveTo(leaderPos) can't navigate
+ * obstacles and the follower would walk into walls. No-LOS agents fall
+ * out of the cluster and pathfind on their own.
+ *
+ * `ignoreModels` should include every agent in the system — otherwise the
+ * raycast hits unrelated NPCs standing between agent and leader, causing
+ * spurious cluster fragmentation in dense crowds.
+ */
+function canFollow(
+	agent: ManagedAgent,
+	leader: ManagedAgent,
+	ignoreModels: Instance[],
+): boolean {
+	return hasLineOfSight(agent.getPosition(), leader.getPosition(), ignoreModels);
+}
 
 interface Cluster {
 	id: string;
@@ -25,6 +44,7 @@ export class PathCache {
 	 */
 	public updateClusters(
 		agents: ManagedAgent[],
+		allAgents: ManagedAgent[],
 		clusterRadius: number,
 		driftThreshold: number,
 	): void {
@@ -51,6 +71,14 @@ export class PathCache {
 			}
 		}
 
+		// Build a single "ignore all agents" list once per update so the LOS
+		// raycast in canFollow doesn't get blocked by other NPCs standing
+		// between the candidate and its prospective leader. Includes CLOSE
+		// and idle agents — they aren't in the cluster, but their bodies
+		// can still block raycasts between two FAR-phase agents.
+		const allAgentModels: Instance[] = [];
+		for (const agent of allAgents) allAgentModels.push(agent.agentModel);
+
 		// For each target group, run greedy clustering
 		const newClusters = new Map<string, Cluster>();
 
@@ -64,13 +92,13 @@ export class PathCache {
 				// Check if agent can join an existing cluster
 				let joined = false;
 
-				// If agent already has a cluster, check drift
+				// If agent already has a cluster, check drift + LOS to leader
 				if (agent.clusterId) {
 					const existing = this.clusters.get(agent.clusterId);
 					if (existing && existing.leader !== agent) {
 						const driftDist = agent.getPosition().sub(existing.leader.getPosition()).Magnitude;
-						if (driftDist <= driftThreshold) {
-							// Still close enough — keep assignment
+						if (driftDist <= driftThreshold && canFollow(agent, existing.leader, allAgentModels)) {
+							// Still close enough AND can see leader — keep assignment
 							let found = false;
 							for (const c of activeClusters) {
 								if (c.id === agent.clusterId) {
@@ -96,10 +124,10 @@ export class PathCache {
 				}
 
 				if (!joined) {
-					// Try joining the nearest active cluster
+					// Try joining the nearest active cluster (must have LOS to its leader)
 					for (const cluster of activeClusters) {
 						const dist = agent.getPosition().sub(cluster.centroid).Magnitude;
-						if (dist <= clusterRadius) {
+						if (dist <= clusterRadius && canFollow(agent, cluster.leader, allAgentModels)) {
 							cluster.followers.push(agent);
 							agent.clusterId = cluster.id;
 							agent.isClusterLeader = false;

@@ -44,12 +44,14 @@ export class ManagedAgent {
 	// ── Config ──────────────────────────────────────────────────────────
 
 	public readonly speed: number;
+	public readonly enablePrediction: boolean;
 
 	constructor(agentModel: Model, config?: ManagedAgentConfig) {
 		this.agentModel = agentModel;
 		this.speed = config?.speed ?? 16;
 		this.priorityBias = config?.priorityBias ?? 0;
 		this.target = config?.target;
+		this.enablePrediction = config?.enablePrediction ?? false;
 
 		this.pathAgent = new PathAgent(agentModel, config);
 		this.maid.GiveTask(() => this.pathAgent.destroy());

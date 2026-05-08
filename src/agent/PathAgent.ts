@@ -44,6 +44,7 @@ export class PathAgent {
 	// ── Visualization ───────────────────────────────────────────────────
 
 	private visualParts: BasePart[] = [];
+	private closeTargetPart: BasePart | undefined;
 
 	/** Override the default green waypoint color (e.g., to distinguish shared paths). */
 	public waypointColor = Color3.fromRGB(0, 255, 0);
@@ -183,7 +184,6 @@ export class PathAgent {
 
 		this.idle = true;
 		this.override.Fire();
-		this.clearVisualization();
 
 		// Halt humanoid at current position to prevent drift
 		if (this.humanoid && !this.moveCallback) {
@@ -335,7 +335,6 @@ export class PathAgent {
 		const finalWaypoint = this.waypoints[this.waypoints.size() - 1];
 		this.idle = true;
 		this.override.Fire();
-		this.clearVisualization();
 		this.setStatus("reached");
 		if (finalWaypoint) {
 			this.reached.Fire(finalWaypoint, this.partial);
@@ -534,11 +533,48 @@ export class PathAgent {
 		}
 	}
 
-	/** Remove all visualization parts. Safe to call at any time. */
+	/** Remove all visualization parts (waypoints + close-phase target). Safe to call at any time. */
 	public clearVisualization(): void {
 		for (const part of this.visualParts) {
 			part.Destroy();
 		}
 		this.visualParts = [];
+		this.hideCloseTarget();
+	}
+
+	/**
+	 * Show or update a single bright waypoint at `pos`. Used by PathManager
+	 * during CLOSE-phase pursuit, where there is no path — just a current
+	 * MoveTo target. No-op when visualize is disabled.
+	 */
+	public showCloseTarget(pos: Vector3): void {
+		if (!this._visualize) return;
+
+		if (this.closeTargetPart) {
+			this.closeTargetPart.Position = pos;
+			return;
+		}
+
+		const part = new Instance("Part");
+		part.Size = new Vector3(0.7, 0.7, 0.7);
+		part.Shape = Enum.PartType.Ball;
+		part.Material = Enum.Material.Neon;
+		part.Color = Color3.fromRGB(255, 0, 0);
+		part.Anchored = true;
+		part.CanCollide = false;
+		part.CanTouch = false;
+		part.CanQuery = false;
+		part.CastShadow = false;
+		part.Position = pos;
+		part.Parent = Workspace;
+		this.closeTargetPart = part;
+	}
+
+	/** Remove the close-phase target indicator if present. */
+	public hideCloseTarget(): void {
+		if (this.closeTargetPart) {
+			this.closeTargetPart.Destroy();
+			this.closeTargetPart = undefined;
+		}
 	}
 }

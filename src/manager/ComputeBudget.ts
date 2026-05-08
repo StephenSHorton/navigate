@@ -28,7 +28,7 @@ export class ComputeBudget {
 	}
 
 	/** Process up to budgetPerFrame agents this frame. */
-	public processFrame(enablePrediction: boolean): void {
+	public processFrame(): void {
 		if (this.pending.size() === 0) return;
 
 		// Collect and sort by priority (ascending = higher priority first)
@@ -44,15 +44,15 @@ export class ComputeBudget {
 		for (let i = 0; i < count; i++) {
 			const agent = sorted[i];
 			this.pending.delete(agent.agentModel);
-			this.dispatchCompute(agent, enablePrediction);
+			this.dispatchCompute(agent);
 		}
 	}
 
 	/** Start a path computation for an agent via task.spawn (non-blocking). */
-	private dispatchCompute(agent: ManagedAgent, enablePrediction: boolean): void {
+	private dispatchCompute(agent: ManagedAgent): void {
 		if (!agent.target) return;
 
-		const targetPos = enablePrediction
+		const targetPos = agent.enablePrediction
 			? predictTargetPosition(agent.getPosition(), agent.target, agent.speed)
 			: agent.target.Position;
 
