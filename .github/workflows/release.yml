@@ -37,9 +37,19 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          npm pkg set version=${{ steps.version.outputs.version }}
-          git add package.json
-          git diff --cached --quiet && echo "Version already up to date" || (git commit -m "chore: update version to ${{ steps.version.outputs.version }}" && git push origin main)
+          CURRENT=$(npm pkg get version | tr -d '"')
+          NEW=${{ steps.version.outputs.version }}
+          HIGHEST=$(printf '%s\n%s\n' "$CURRENT" "$NEW" | sort -V | tail -1)
+          if [ "$CURRENT" = "$NEW" ]; then
+            echo "Version already $NEW — no bump needed"
+          elif [ "$HIGHEST" != "$NEW" ]; then
+            echo "main is at $CURRENT (>= tag $NEW) — backfill, skipping version bump"
+          else
+            npm pkg set version=$NEW
+            git add package.json
+            git commit -m "chore: update version to $NEW"
+            git push origin main
+          fi
 
       - name: Publish to npm
         run: |
