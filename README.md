@@ -118,19 +118,16 @@ manager.setTarget(grunt1, playerRoot); // any member; group inherits
 
 The group picks one pathfinder. Other members ride the formation: a wedge shape while moving, then redistribute to surround the target on arrival.
 
-### Formation gallery
+### Formation types
 
-```
-Heading: ↑
-
-  none           line         wedge        circle       grid
-                 ●            ●                          ● ● ●
-   ★          ●  ★  ●          ★             ●           ● ★ ●
-              ●     ●         ●               ★               
-                              ●            ●  ●              
-                              ●               ●           
-                                             ●
-```
+| Type | Shape |
+|---|---|
+| `none` | All followers converge on the leader (no offset). |
+| `line` | Alternating left/right perpendicular to heading. |
+| `wedge` | V-shape spreading backward from the leader. |
+| `circle` | Even ring around the leader. |
+| `grid` | Square grid behind the leader. |
+| `custom` | You provide an `offsets: Vector3[]` array, leader-local. |
 
 Set spacing to control density:
 
