@@ -1,12 +1,34 @@
 {
 	"name": "@rbxts/navigate",
 	"version": "0.1.0",
+	"description": "Composable TypeScript-native pathfinding suite for roblox-ts. Wraps PathfindingService with multi-agent coordination, formations, and arrival behaviors.",
 	"main": "out/init.luau",
 	"types": "out/index.d.ts",
-	"files": ["out"],
+	"files": ["out/**/*.luau", "out/**/*.d.ts"],
+	"keywords": [
+		"roblox",
+		"roblox-ts",
+		"@rbxts",
+		"pathfinding",
+		"navigation",
+		"ai",
+		"npc",
+		"flamework"
+	],
+	"author": "StephenSHorton",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/StephenSHorton/navigate"
+	},
+	"homepage": "https://github.com/StephenSHorton/navigate#readme",
+	"bugs": {
+		"url": "https://github.com/StephenSHorton/navigate/issues"
+	},
 	"scripts": {
 		"build": "rbxtsc",
-		"watch": "rbxtsc -w"
+		"watch": "rbxtsc -w",
+		"prepublishOnly": "bun run build"
 	},
 	"dependencies": {
 		"@rbxts/maid": "^1.1.0",
