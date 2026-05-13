@@ -185,9 +185,12 @@ export class PathAgent {
 		this.idle = true;
 		this.override.Fire();
 
-		// Halt humanoid at current position to prevent drift
+		// Fully clear the humanoid's walk state. MoveTo(currentPos) cancels
+		// the prior path but leaves WalkToPoint set and MoveDirection non-zero
+		// for a tick, which keeps walk animations playing after stop().
 		if (this.humanoid && !this.moveCallback) {
-			this.humanoid.MoveTo(this.getPosition());
+			this.humanoid.WalkToPoint = Vector3.zero;
+			this.humanoid.Move(Vector3.zero, false);
 		}
 
 		this.setStatus("idle");
